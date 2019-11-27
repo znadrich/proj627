@@ -1,7 +1,7 @@
 #####################################################
 # 1. Read in data and format nicely for analysis    #
 # 2. Make train/test split                          #
-# Save in fst format for compression and loading    #
+# 3. Save in fst format for compression and loading #
 #####################################################
 
 setwd('/Users/Zack/Dropbox/Classes/Stat627/project/')
