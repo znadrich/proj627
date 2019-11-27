@@ -1,7 +1,8 @@
-##################################################
-# Read in data and format nicely for analysis    #
-# Save in fst format for compression and loading #
-##################################################
+#####################################################
+# 1. Read in data and format nicely for analysis    #
+# 2. Make train/test split                          #
+# Save in fst format for compression and loading    #
+#####################################################
 
 setwd('/Users/Zack/Dropbox/Classes/Stat627/project/')
 
@@ -34,4 +35,11 @@ cover_types <- c(
 forests <- data.table::fread('data/covtype.csv', header=F, col.names = colnames)
 forests$cover_type <- sapply(forests$cover_type, function(x) cover_types[x])
 
-fst::write.fst(forests, path='data/covtype.fst')
+set.seed(123)
+train_test_split <- sample(nrow(forests), .8*nrow(forests))
+train <- forests[train_test_split, ]
+test <- forests[-train_test_split, ]
+
+fst::write.fst(forests, path='data/covtype.fst', compress=100)
+fst::write.fst(train, 'data/covtype_train.fst', compress=100)
+fst::write.fst(test, 'data/covtype_test.fst', compress=100)
