@@ -33,6 +33,7 @@ cover_types <- c(
 )
 
 forests <- data.table::fread('data/covtype.csv', header=F, col.names = colnames)
+forests <- as.data.frame(forests)
 forests$cover_type <- sapply(forests$cover_type, function(x) cover_types[x])
 
 set.seed(123)
