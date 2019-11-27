@@ -38,7 +38,7 @@ keep_types <- c('Aspen', 'Douglas-fir')
 forests <- data.table::fread('data/covtype.csv', header=F, col.names = colnames)
 forests <- as.data.frame(forests)
 forests$cover_type <- sapply(forests$cover_type, function(x) cover_types[x])
-forests <- forests[forests$cover_type %in% keep_type]
+forests <- forests[forests$cover_type %in% keep_types, ]
 
 set.seed(123)
 train_test_split <- sample(nrow(forests), .8*nrow(forests))
