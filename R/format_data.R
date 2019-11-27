@@ -1,50 +1,17 @@
 #####################################################
-# 1. Read in data and format nicely for analysis    #
-# 2. Filter to Aspen and Douglas-fir only           #
-# 3. Make train/test split                          #
-# 4. Save in fst format for compression and loading #
+# 1. Read in data                                   #
+# 2. Make train/test split                          #
 #####################################################
 
 setwd('/Users/Zack/Dropbox/Classes/Stat627/project/')
 
-colnames <- c(
-  'elevation',
-  'aspect',
-  'slope',
-  'h_dist_hydro',
-  'v_dist_hydro',
-  'h_dist_road',
-  'hillshade_9am',
-  'hillshade_noon',
-  'hillshade_3pm',
-  'h_dist_fire',
-  paste('wilderness_area_', 1:4, sep=''),
-  paste('soil_type_', 1:40, sep=''),
-  'cover_type'
-)
-
-cover_types <- c(
-  'Spruce/Fir',
-  'Lodgepole Pine',
-  'Ponderosa Pine',
-  'Cottonwood/Willow',
-  'Aspen',
-  'Douglas-fir',
-  'Krummholz'
-)
-
-keep_types <- c('Aspen', 'Douglas-fir')
-
-forests <- data.table::fread('data/covtype.csv', header=F, col.names = colnames)
-forests <- as.data.frame(forests)
-forests$cover_type <- sapply(forests$cover_type, function(x) cover_types[x])
-forests <- forests[forests$cover_type %in% keep_types, ]
+sim <- data.table::fread('data/pop_failures.csv')
+sim <- as.data.frame(sim)
 
 set.seed(123)
-train_test_split <- sample(nrow(forests), .8*nrow(forests))
-train <- forests[train_test_split, ]
-test <- forests[-train_test_split, ]
+train_test_split <- sample(nrow(sim), .8*nrow(sim))
+train <- sim[train_test_split, ]
+test <- sim[-train_test_split, ]
 
-fst::write.fst(forests, path='data/covtype.fst', compress=100)
-fst::write.fst(train, 'data/covtype_train.fst', compress=100)
-fst::write.fst(test, 'data/covtype_test.fst', compress=100)
+write.csv(train, 'data/train.csv', row.names = FALSE)
+write.csv(test, 'data/test.csv', row.names = FALSE)
