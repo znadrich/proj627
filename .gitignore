@@ -1,0 +1,8 @@
+*.png
+*.gif
+*.pdf
+.Rhistory
+.Rproj.user
+*.Rproj
+*.Rbuildignore
+*.csv
