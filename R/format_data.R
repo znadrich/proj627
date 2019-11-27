@@ -1,7 +1,8 @@
 #####################################################
 # 1. Read in data and format nicely for analysis    #
-# 2. Make train/test split                          #
-# 3. Save in fst format for compression and loading #
+# 2. Filter to Aspen and Douglas-fir only           #
+# 3. Make train/test split                          #
+# 4. Save in fst format for compression and loading #
 #####################################################
 
 setwd('/Users/Zack/Dropbox/Classes/Stat627/project/')
@@ -32,9 +33,12 @@ cover_types <- c(
   'Krummholz'
 )
 
+keep_types <- c('Aspen', 'Douglas-fir')
+
 forests <- data.table::fread('data/covtype.csv', header=F, col.names = colnames)
 forests <- as.data.frame(forests)
 forests$cover_type <- sapply(forests$cover_type, function(x) cover_types[x])
+forests <- forests[forests$cover_type %in% keep_type]
 
 set.seed(123)
 train_test_split <- sample(nrow(forests), .8*nrow(forests))
