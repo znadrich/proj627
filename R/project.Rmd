@@ -1,0 +1,111 @@
+---
+title: "Final Project"
+author: "Zack Nadrich"
+date: "12/2/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(glmnet)
+library(tree)
+library(MASS)
+knitr::opts_chunk$set(echo = TRUE)
+load("../data/renv.RData")
+```
+
+## Data Description
+
+The dataset used for this project, Climate Model Simulations Crashes, is from the UCI Machine Learning Repository. The goal for this dataset is determine which combinations of parameter inputs for the climate model simulation causes the simulation to later crash. 
+
+In the frame of scientific computing, we are aiming to reduce wasted computation time for expensive supercomputers as well as reduce debugging time that programmers have to spend in fixing the climate model simulations.
+
+The dataset includes 180 simulations under 3 latin hypercube studies, for a total of 540 observations. The target variable, `outcome`, is coded as `1=success, 0=failure` with an average success rate of `r round(mean(sim$outcome=='1'), 3)`. In addition, there are 18 model parameters that are each scaled to an interval of `[0, 1]`.
+
+Below are the names of each parameter - note that definitions are available in the paper 'Failure Analysis of Parameter-Induced Simulation Crashes in Climate Models'
+
+```{r}
+names(sim)
+```
+
+## Classification Algorithms
+
+A total of 5 clasification algorithms were evaluated for this dataset
+
+* Logistic regression
+* Ridge regression
+  * Lambda parameter chosen by CV
+* Lasso
+  * Lambda parameter chosen by CV
+* Linear Discriminant Analysis (LDA)
+* Classification tree
+  * CV was performed to determine best tree complexity
+
+In preparation to evaluate the algorithms against each other, the data was split into a 80%/20% train/validation split and evaluation was based on the AUC metric.
+
+Below we can see that each algorithm performs similarly, except decision trees. 
+
+```{r}
+sapply(fits, function(x) x$eval)
+```
+
+### Model Inference
+
+#### Logistic Regression
+
+As we will see in more clearly in both Lasso and Ridge regression, only a few of the climate model parameter inputs are considered statistically significant in the logistic regression. Based on the performance of Ridge and Lasso, indeed these models will be preferable as they will be more intepretable and as performant as including every climate model parameter.
+
+```{r}
+summary(fits$logistic_reg$fit)
+```
+
+#### Ridge Regression
+
+Since ridge regression does not exactly shrink coefficient values to 0, it is a little bit difficult to tell from the output which variables are the most important. We shall see in Lasso that indeed only a few input paramters should be necessary to determine model simulation crashes.
+
+```{r}
+fits$ridge$params$coefs
+```
+
+#### Lasso
+
+Out of all models evaluated, my preferred is Lasso due to the output below. Simplicity is key here - only two model input parameters determine simulation crashes! Based on definition from the original publications, these are both variable viscosity parameters. 
+
+```{r}
+fits$lasso$params$coefs
+```
+
+Indeed below we can see that the distribution for the two parameters are different by simulation outcome, where a higher value is more likely to cause a simulation crash.
+
+```{r}
+plot(sim$outcome, sim$vconst_2, ylab='outcome', xlab='vconst_2')
+plot(sim$outcome, sim$vconst_corr, ylab='outcome', xlab='vconst_corr')
+```
+
+#### LDA
+
+As we have seen before in Lasso, `vconst_corr` and `vconst_2` have a large amount of weight placed on them in LDA.
+
+```{r}
+fits$LDA$fit
+```
+
+#### Classification tree
+
+Of all the algorithms used, classification trees had the worst AUC. This is not to say that the tree is not worthy of being examined as it has the easiest interpretation. Indeed `vconst_corr` and `vconst_2` are picked up as important predictors, along with some other parameters. From the diagram we can see that the tree has segmented simulation crashes as a result of `vconst_corr` > 0.525
+
+```{r}
+summary(fits$tree$fit)
+```
+
+
+```{r}
+plot(fits$tree$fit)
+text(fits$tree$fit, cex=.8)
+```
+
+## Conclusion
+
+Failures of simulation models can be costly from both a time and computation perspective. Climate models are some of the most demanding simulations out there and are often run on expensive supercomputers. This case study provides an opportunity to address simulation crashes as a result of invalid or buggy input parameters. 
+
+Due to the nature of this problem, an easy to understand solution is preferrable. As a result, our most preferred method would be Lasso due to the shrinkage penalty. The Lasso model fit reduces our feature set to 2, `vconst_corr` and `vconst_2`. With this information, the computational scientists would be able to troubleshoot the simulation code or place restrictions on input parameters in order to avoid costly simulation crashes.
+
