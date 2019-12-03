@@ -1,5 +1,4 @@
 setwd('/Users/Zack/Dropbox/Classes/Stat627/project/')
-source('R/center_scaler.R')
 library(glmnet)
 library(tree)
 library(MASS)
