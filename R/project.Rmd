@@ -46,13 +46,13 @@ In preparation to evaluate the algorithms against each other, the data was split
 Below we can see that each algorithm performs similarly, except decision trees. 
 
 
-```{r}
+```{r, fig.width=5}
 auc <- sapply(fits, function(x) round(x$eval, 3))
 plot(fits$logistic_reg$roc, col='blue')
-lines(fits$lasso$roc, col='red')
-lines(fits$ridge$roc, col='green')
-lines(fits$tree$roc, col='cyan')
-lines(fits$LDA$roc, col='black')
+plot(fits$lasso$roc, col='red', add=TRUE)
+plot(fits$ridge$roc, col='green', add=TRUE)
+plot(fits$tree$roc, col='cyan', add=TRUE)
+plot(fits$LDA$roc, col='black', add=TRUE)
 legend(
   'bottomright', 
   paste(names(fits), auc, sep=' - '), 
