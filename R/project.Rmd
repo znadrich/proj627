@@ -9,6 +9,7 @@ output: pdf_document
 library(glmnet)
 library(tree)
 library(MASS)
+library(pROC)
 knitr::opts_chunk$set(echo = TRUE)
 load("../data/renv.RData")
 ```
@@ -44,13 +45,30 @@ In preparation to evaluate the algorithms against each other, the data was split
 
 Below we can see that each algorithm performs similarly, except decision trees. 
 
+
 ```{r}
-sapply(fits, function(x) x$eval)
+auc <- sapply(fits, function(x) round(x$eval, 3))
+plot(fits$logistic_reg$roc, col='blue')
+lines(fits$lasso$roc, col='red')
+lines(fits$ridge$roc, col='green')
+lines(fits$tree$roc, col='cyan')
+lines(fits$LDA$roc, col='black')
+legend(
+  'bottomright', 
+  paste(names(fits), auc, sep=' - '), 
+  col=c('blue', 'red', 'green', 'cyan', 'black'),
+  lty=1
+)
 ```
+
 
 ### Model Inference
 
 #### Logistic Regression
+
+One benefit of logistic regression is the ease in statistical inference, such as the ability to understand the effect each predictor has on the outcome and statistical testing for predictor significance. In our case, we would like to detect which of the input parameters lead to higher chance of a simulation crash, so our needs are met. 
+
+The drawbacks of logistic regression would be that we are assuming a linear relationship of the log-odds and predictors. Should this assumption not hold true, our model will not be flexible enough to detect the true relationship.
 
 As we will see in more clearly in both Lasso and Ridge regression, only a few of the climate model parameter inputs are considered statistically significant in the logistic regression. Based on the performance of Ridge and Lasso, indeed these models will be preferable as they will be more intepretable and as performant as including every climate model parameter.
 
@@ -60,13 +78,15 @@ summary(fits$logistic_reg$fit)
 
 #### Ridge Regression
 
-Since ridge regression does not exactly shrink coefficient values to 0, it is a little bit difficult to tell from the output which variables are the most important. We shall see in Lasso that indeed only a few input paramters should be necessary to determine model simulation crashes.
+In ridge regression we are sacrificing more bias for less variance in model fit. This sacrifice in bias also depends on the relationship being linear, just as with logistic regression. Note that does not shrink coefficient values to 0, so we will not be performing variable selection. We shall see in Lasso that indeed only a few input paramters should be necessary to determine model simulation crashes.
 
 ```{r}
 fits$ridge$params$coefs
 ```
 
 #### Lasso
+
+Unlike ridge regression, Lasso does indeed shrink coefficient values to 0. Effectively, this results in a feature selection algorithm that will output which input parameters have the most influence on simulation crashes.
 
 Out of all models evaluated, my preferred is Lasso due to the output below. Simplicity is key here - only two model input parameters determine simulation crashes! Based on definition from the original publications, these are both variable viscosity parameters. 
 
@@ -81,15 +101,26 @@ plot(sim$outcome, sim$vconst_2, ylab='outcome', xlab='vconst_2')
 plot(sim$outcome, sim$vconst_corr, ylab='outcome', xlab='vconst_corr')
 ```
 
-#### LDA
+#### Linear Discriminate Analysis
+ 
+One benefit of LDA is that the parameterization is intuitive and easy to understand. On the otherhand, due to this parameterization we are making several strong assumptions.
 
-As we have seen before in Lasso, `vconst_corr` and `vconst_2` have a large amount of weight placed on them in LDA.
+LDA assumptions
+
+* Features are distributed as multivariate normal for each class
+* Covariance matrices are homogenous across classes
+
+Given that these assumptions hold true, we will be able to make inference based on the mean vector for each class.
+
+As we have seen before in Lasso, `vconst_corr` and `vconst_2` have a large amount of weight placed on them in the linear discriminant coefficients. Additionally, we can see that these two variables have drastically different means between outcome.
 
 ```{r}
 fits$LDA$fit
 ```
 
 #### Classification tree
+
+Classification trees offer a non-parametric model with no assumptions on the data. This flexibility, however, will come at a cost in higher variance. As additional benefits, classification trees will offer variable selection due to the greedy split strategy and a great visualization for model inference.
 
 Of all the algorithms used, classification trees had the worst AUC. This is not to say that the tree is not worthy of being examined as it has the easiest interpretation. Indeed `vconst_corr` and `vconst_2` are picked up as important predictors, along with some other parameters. From the diagram we can see that the tree has segmented simulation crashes as a result of `vconst_corr` > 0.525
 

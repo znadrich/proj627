@@ -17,16 +17,22 @@ roc.auc <- function(predictions, actual){
   return(ROSE::roc.curve(actual, predictions, plotit = F)$auc)
 }
 
+roc <- function(predictions, actual){
+  roc.curve <- pROC::roc(response=actual, predictor=predictions)
+}
+
 # Fit logistic regression and return AUC for test dataset
 fit.logistic <- function(test, params, eval.func){
   fit <- do.call(glm, params)
   fit$call <- params$formula
   predictions <- predict(fit, test, type='response')
   eval <- eval.func(predictions, test$outcome)
+  roc.curve <- roc(predictions, test$outcome)
   model <- list(
     fit=fit,
     eval=eval,
-    params=params
+    params=params,
+    roc=roc.curve
   )
   return(model)
 }
@@ -37,10 +43,12 @@ fit.lda <- function(train, test, params, eval.func){
   fit$call <- params$formula
   predictions <- predict(fit, test)$posterior[, 2]
   eval <- eval.func(predictions, test$outcome)
+  roc.curve <- roc(predictions, test$outcome)
   model <- list(
     fit=fit,
     eval=eval,
-    params=params
+    params=params,
+    roc=roc.curve
   )
   return(model)
 }
@@ -57,10 +65,12 @@ fit.glmnet <- function(train, test, formula, params, eval.func){
   predictions <- predict(fit, test.mm, s='lambda.1se')
   eval <- eval.func(predictions, test$outcome)
   params$coefs <- as.matrix(coef(fit, s='lambda.1se'))
+  roc.curve <- roc(predictions, test$outcome)
   model <- list(
     fit=fit,
     eval=eval,
-    params=params
+    params=params,
+    roc=roc.curve
   )
   return(model)
 }
@@ -83,10 +93,12 @@ fit.tree <- function(train, test, formula, params, size, eval.func){
   predictions <- predict(fit, test, type='vector')[, 2]
   eval <- eval.func(predictions, test$outcome)
   params$size <- size
+  roc.curve <- roc(predictions, test$outcome)
   model <- list(
     fit=fit,
     eval=eval,
-    params=params
+    params=params,
+    roc=roc.curve
   )
   
   return(model)
